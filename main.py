@@ -8,8 +8,13 @@ import sys
 import os
 import argparse
 from pathlib import Path
-from dotenv import load_dotenv
 from colorama import Fore, Style, init
+
+# Optional imports
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None  # dotenv is optional
 
 from ai_engine import TroubleshootingEngine
 from bug_detector import BugDetector
@@ -73,7 +78,8 @@ def analyze_code_command(args):
 
 def debug_command(args):
     """Start debugging session with AI"""
-    load_dotenv()  # Load .env if it exists (optional)
+    if load_dotenv:
+        load_dotenv()  # Load .env if it exists (optional)
 
     provider = os.getenv("AI_PROVIDER", "local")  # Default to local mode!
 
@@ -154,7 +160,8 @@ def debug_command(args):
 
 def interactive_command(args):
     """Start interactive CLI"""
-    load_dotenv()  # Load .env if it exists (optional)
+    if load_dotenv:
+        load_dotenv()  # Load .env if it exists (optional)
 
     provider = os.getenv("AI_PROVIDER", "local")  # Default to local mode!
 

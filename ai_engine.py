@@ -54,8 +54,11 @@ class TroubleshootingEngine:
             if get_local_ai is None:
                 raise ImportError("local_ai module not found")
 
+            # Map "local" to "auto" for get_local_ai
+            provider_type = "auto" if self.provider == "local" else self.provider
+
             self.client = get_local_ai(
-                provider_type=self.provider,
+                provider_type=provider_type,
                 model=kwargs.get("model", "llama2"),
                 host=kwargs.get("host", "http://localhost:11434")
             )
