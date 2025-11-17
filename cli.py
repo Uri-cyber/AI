@@ -17,14 +17,30 @@ init(autoreset=True)
 class TroubleshootingCLI:
     """Command-line interface for troubleshooting assistant"""
 
-    def __init__(self, provider: str = "anthropic"):
+    def __init__(self, provider: str = "local", **kwargs):
         """Initialize the CLI"""
-        self.engine = TroubleshootingEngine(provider)
+        self.engine = TroubleshootingEngine(provider, **kwargs)
         self.history = InMemoryHistory()
         self.running = True
+        self.provider = provider
 
     def print_banner(self):
         """Print welcome banner"""
+        # Determine AI mode
+        ai_mode = self.engine.provider.upper()
+        if ai_mode == "RULE-BASED":
+            mode_desc = f"{Fore.GREEN}🟢 LOCAL MODE - Rule-Based Expert System{Style.RESET_ALL}"
+            mode_info = f"{Fore.YELLOW}💡 Tip: For smarter AI, install Ollama: https://ollama.ai{Style.RESET_ALL}"
+        elif ai_mode == "OLLAMA":
+            mode_desc = f"{Fore.GREEN}🟢 LOCAL MODE - Ollama ({self.engine.model}){Style.RESET_ALL}"
+            mode_info = f"{Fore.GREEN}✓ Running locally - No API costs!{Style.RESET_ALL}"
+        elif ai_mode in ["ANTHROPIC", "OPENAI"]:
+            mode_desc = f"{Fore.CYAN}☁️  CLOUD MODE - {ai_mode.title()}{Style.RESET_ALL}"
+            mode_info = f"{Fore.YELLOW}⚠️  Using cloud AI - API costs apply{Style.RESET_ALL}"
+        else:
+            mode_desc = f"{Fore.CYAN}AI Mode: {ai_mode}{Style.RESET_ALL}"
+            mode_info = ""
+
         banner = f"""
 {Fore.CYAN}╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
@@ -33,6 +49,9 @@ class TroubleshootingCLI:
 ║          Your intelligent problem-solving companion        ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝{Style.RESET_ALL}
+
+{mode_desc}
+{mode_info}
 
 {Fore.YELLOW}Available Commands:{Style.RESET_ALL}
   • Type your problem description to start troubleshooting
@@ -237,27 +256,40 @@ class TroubleshootingCLI:
 def main():
     """Main entry point"""
     import os
-    from dotenv import load_dotenv
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()  # Optional - only if dotenv installed
+    except ImportError:
+        pass  # dotenv not required for local mode
 
-    # Load environment variables
-    load_dotenv()
+    # Get provider from environment or use local by default
+    provider = os.getenv("AI_PROVIDER", "local")
 
-    # Get provider from environment or use default
-    provider = os.getenv("AI_PROVIDER", "anthropic")
+    # Validate API key only for cloud providers
+    if provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            print(f"{Fore.RED}Error: ANTHROPIC_API_KEY not found{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Create .env with your API key or use local mode{Style.RESET_ALL}")
+            sys.exit(1)
+    elif provider == "openai":
+        if not os.getenv("OPENAI_API_KEY"):
+            print(f"{Fore.RED}Error: OPENAI_API_KEY not found{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Create .env with your API key or use local mode{Style.RESET_ALL}")
+            sys.exit(1)
 
-    # Validate API key
-    if provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
-        print(f"{Fore.RED}Error: ANTHROPIC_API_KEY not found in environment{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please create a .env file with your API key (see .env.example){Style.RESET_ALL}")
-        sys.exit(1)
-    elif provider == "openai" and not os.getenv("OPENAI_API_KEY"):
-        print(f"{Fore.RED}Error: OPENAI_API_KEY not found in environment{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please create a .env file with your API key (see .env.example){Style.RESET_ALL}")
-        sys.exit(1)
-
-    # Start CLI
-    cli = TroubleshootingCLI(provider)
-    cli.run()
+    # Start CLI with local mode support
+    try:
+        cli = TroubleshootingCLI(
+            provider,
+            model=os.getenv("OLLAMA_MODEL", "llama2"),
+            host=os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        )
+        cli.run()
+    except Exception as e:
+        print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Falling back to rule-based mode...{Style.RESET_ALL}")
+        cli = TroubleshootingCLI("rule-based")
+        cli.run()
 
 
 if __name__ == "__main__":

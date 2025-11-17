@@ -2,6 +2,29 @@
 
 An intelligent AI-powered debugging and troubleshooting tool that helps developers find bugs, diagnose issues, and solve technical problems. Built with advanced code analysis, comprehensive logging, and conversational AI.
 
+## 🆓 **NEW: 100% FREE LOCAL MODE - No API Tokens Required!**
+
+**Run your own AI completely FREE with zero API costs!**
+
+```bash
+pip install colorama prompt-toolkit requests
+python main.py  # Works instantly - no tokens needed!
+```
+
+✅ **Works out of the box** - No configuration required
+✅ **No API costs** - Everything runs locally
+✅ **No internet needed** - Fully offline capable
+✅ **100% Private** - Your code never leaves your machine
+
+**👉 [See LOCAL_MODE.md for complete guide](LOCAL_MODE.md)**
+
+Choose your mode:
+- **Rule-Based (Default)** - Instant, works anywhere, no setup
+- **Ollama** - Smarter local AI, free, requires Ollama installation
+- **Cloud AI** - Best quality, requires API tokens (Claude/GPT)
+
+---
+
 ## ✨ Features
 
 ### 🔍 Automated Bug Detection
@@ -30,32 +53,40 @@ An intelligent AI-powered debugging and troubleshooting tool that helps develope
 
 ## 🚀 Quick Start
 
-### Installation
+### Option 1: Local Mode (Recommended - FREE!)
 
-1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd AI
-```
+# 1. Install minimal dependencies
+pip install colorama prompt-toolkit requests
 
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-3. **Configure API keys**
-```bash
-cp .env.example .env
-# Edit .env and add your API key
-```
-
-4. **Run the application**
-```bash
-# Interactive mode
+# 2. Run immediately - no configuration needed!
 python main.py
+```
 
-# Or use CLI directly
-python cli.py
+**That's it!** Works instantly with rule-based AI. No tokens, no setup, no cost.
+
+**Want smarter AI?** Install [Ollama](https://ollama.ai) (free, local):
+```bash
+ollama pull llama2
+ollama serve
+python main.py  # Auto-detects and uses Ollama!
+```
+
+### Option 2: Cloud AI (Requires API Tokens)
+
+```bash
+# 1. Install all dependencies
+pip install -r requirements.txt
+
+# 2. Configure API key
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY or OPENAI_API_KEY
+
+# 3. Set provider
+echo "AI_PROVIDER=anthropic" >> .env  # or "openai"
+
+# 4. Run
+python main.py
 ```
 
 ## 📖 Usage

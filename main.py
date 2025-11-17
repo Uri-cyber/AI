@@ -73,21 +73,34 @@ def analyze_code_command(args):
 
 def debug_command(args):
     """Start debugging session with AI"""
-    load_dotenv()
+    load_dotenv()  # Load .env if it exists (optional)
 
-    provider = os.getenv("AI_PROVIDER", "anthropic")
+    provider = os.getenv("AI_PROVIDER", "local")  # Default to local mode!
 
-    # Validate API key
-    if provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
-        print(f"{Fore.RED}Error: ANTHROPIC_API_KEY not found{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
-        return 1
-    elif provider == "openai" and not os.getenv("OPENAI_API_KEY"):
-        print(f"{Fore.RED}Error: OPENAI_API_KEY not found{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
-        return 1
+    # Validate API key only for cloud providers
+    if provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            print(f"{Fore.RED}Error: ANTHROPIC_API_KEY not found{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}Or use local mode: AI_PROVIDER=local{Style.RESET_ALL}")
+            return 1
+    elif provider == "openai":
+        if not os.getenv("OPENAI_API_KEY"):
+            print(f"{Fore.RED}Error: OPENAI_API_KEY not found{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}Or use local mode: AI_PROVIDER=local{Style.RESET_ALL}")
+            return 1
 
-    engine = TroubleshootingEngine(provider)
+    try:
+        engine = TroubleshootingEngine(
+            provider,
+            model=os.getenv("OLLAMA_MODEL", "llama2"),
+            host=os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        )
+    except Exception as e:
+        print(f"{Fore.RED}Error initializing AI: {e}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Falling back to rule-based mode...{Style.RESET_ALL}")
+        engine = TroubleshootingEngine("rule-based")
 
     print(f"\n{Fore.CYAN}🤖 AI Debugging Assistant Started{Style.RESET_ALL}\n")
 
@@ -141,22 +154,36 @@ def debug_command(args):
 
 def interactive_command(args):
     """Start interactive CLI"""
-    load_dotenv()
+    load_dotenv()  # Load .env if it exists (optional)
 
-    provider = os.getenv("AI_PROVIDER", "anthropic")
+    provider = os.getenv("AI_PROVIDER", "local")  # Default to local mode!
 
-    # Validate API key
-    if provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
-        print(f"{Fore.RED}Error: ANTHROPIC_API_KEY not found{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
-        return 1
-    elif provider == "openai" and not os.getenv("OPENAI_API_KEY"):
-        print(f"{Fore.RED}Error: OPENAI_API_KEY not found{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
-        return 1
+    # Validate API key only for cloud providers
+    if provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            print(f"{Fore.RED}Error: ANTHROPIC_API_KEY not found{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}Or use local mode: AI_PROVIDER=local{Style.RESET_ALL}")
+            return 1
+    elif provider == "openai":
+        if not os.getenv("OPENAI_API_KEY"):
+            print(f"{Fore.RED}Error: OPENAI_API_KEY not found{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Please create a .env file with your API key{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}Or use local mode: AI_PROVIDER=local{Style.RESET_ALL}")
+            return 1
 
-    cli = TroubleshootingCLI(provider)
-    cli.run()
+    try:
+        cli = TroubleshootingCLI(
+            provider,
+            model=os.getenv("OLLAMA_MODEL", "llama2"),
+            host=os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        )
+        cli.run()
+    except Exception as e:
+        print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Trying rule-based mode...{Style.RESET_ALL}")
+        cli = TroubleshootingCLI("rule-based")
+        cli.run()
 
     return 0
 

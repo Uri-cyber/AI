@@ -6,38 +6,80 @@ Handles AI interactions and troubleshooting logic
 import os
 import re
 from typing import List, Dict, Optional
-from anthropic import Anthropic
-from openai import OpenAI
 from logger import TroubleshootingLogger
 from bug_detector import BugDetector, BugReport
+
+# Optional cloud providers
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
+# Local AI provider
+try:
+    from local_ai import get_local_ai, OllamaProvider, RuleBasedAI
+except ImportError:
+    get_local_ai = None
 
 
 class TroubleshootingEngine:
     """Core engine for AI-powered troubleshooting"""
 
-    def __init__(self, provider: str = "anthropic", enable_logging: bool = True):
+    def __init__(self, provider: str = "local", enable_logging: bool = True, **kwargs):
         """
         Initialize the troubleshooting engine
 
         Args:
-            provider: AI provider to use ('anthropic' or 'openai')
+            provider: AI provider to use ('local', 'ollama', 'rule-based', 'anthropic', or 'openai')
             enable_logging: Whether to enable logging
+            **kwargs: Additional arguments for local providers (model, host, etc.)
         """
         self.provider = provider.lower()
         self.conversation_history: List[Dict[str, str]] = []
         self.bug_detector = BugDetector()
+        self.client = None
+        self.model = "unknown"
 
         # Initialize logger
         self.logger = TroubleshootingLogger() if enable_logging else None
 
-        if self.provider == "anthropic":
+        # Initialize AI provider
+        if self.provider in ["local", "ollama", "rule-based"]:
+            # Local AI - no tokens required!
+            if get_local_ai is None:
+                raise ImportError("local_ai module not found")
+
+            self.client = get_local_ai(
+                provider_type=self.provider,
+                model=kwargs.get("model", "llama2"),
+                host=kwargs.get("host", "http://localhost:11434")
+            )
+
+            if isinstance(self.client, OllamaProvider):
+                self.model = self.client.model
+                self.provider = "ollama"
+            else:
+                self.model = "rule-based-expert-system"
+                self.provider = "rule-based"
+
+        elif self.provider == "anthropic":
+            if Anthropic is None:
+                raise ImportError("anthropic package not installed. Run: pip install anthropic")
             self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
             self.model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5-20250929")
+
         elif self.provider == "openai":
+            if OpenAI is None:
+                raise ImportError("openai package not installed. Run: pip install openai")
             self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             self.model = os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview")
         else:
-            raise ValueError(f"Unsupported provider: {provider}")
+            raise ValueError(f"Unsupported provider: {provider}. Use: local, ollama, rule-based, anthropic, or openai")
 
         # Log session start
         if self.logger:
@@ -168,6 +210,10 @@ Be concise, practical, and actionable. Focus on solving the problem efficiently 
             return self._get_anthropic_response()
         elif self.provider == "openai":
             return self._get_openai_response()
+        elif self.provider == "ollama":
+            return self._get_ollama_response()
+        elif self.provider == "rule-based":
+            return self._get_rule_based_response()
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -193,6 +239,35 @@ Be concise, practical, and actionable. Focus on solving the problem efficiently 
             max_tokens=2048
         )
         return response.choices[0].message.content
+
+    def _get_ollama_response(self) -> str:
+        """Get response from local Ollama"""
+        # Format messages for Ollama
+        messages = [
+            {"role": "system", "content": self.get_system_prompt()}
+        ] + self.conversation_history
+
+        return self.client.chat(messages)
+
+    def _get_rule_based_response(self) -> str:
+        """Get response from rule-based expert system"""
+        # Extract the problem from conversation history
+        if self.conversation_history:
+            last_message = self.conversation_history[-1]
+            problem = last_message.get("content", "")
+
+            # Extract context if available
+            context = None
+            if len(self.conversation_history) > 1:
+                context_parts = []
+                for msg in self.conversation_history[:-1]:
+                    if msg.get("role") == "user":
+                        context_parts.append(msg.get("content", ""))
+                context = "\n".join(context_parts) if context_parts else None
+
+            return self.client.analyze(problem, context)
+        else:
+            return "Please describe the problem you're experiencing."
 
     def reset_conversation(self):
         """Reset the conversation history"""

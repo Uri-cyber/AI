@@ -1,6 +1,22 @@
-anthropic>=0.39.0
-openai>=1.54.0
-python-dotenv>=1.0.0
-colorama>=0.4.6
-prompt-toolkit>=3.0.43
-pyyaml>=6.0.1
+# ==========================================
+# AI Troubleshooting Assistant - Dependencies
+# ==========================================
+
+# CORE DEPENDENCIES (Required - always install these)
+# --------------------------------------------------
+colorama>=0.4.6          # Terminal colors
+prompt-toolkit>=3.0.43   # Interactive CLI
+requests>=2.31.0         # HTTP requests for Ollama
+
+# OPTIONAL: Cloud AI Providers (only if you want cloud AI)
+# ---------------------------------------------------------
+# Uncomment these ONLY if you want to use cloud AI (requires API tokens)
+# For local/offline use, you DON'T need these!
+
+# anthropic>=0.39.0      # Optional: for Claude AI (requires token)
+# openai>=1.54.0         # Optional: for GPT AI (requires token)
+# python-dotenv>=1.0.0   # Optional: for .env file support
+
+# OPTIONAL: Advanced features
+# ----------------------------
+# pyyaml>=6.0.1          # Optional: for YAML configuration
